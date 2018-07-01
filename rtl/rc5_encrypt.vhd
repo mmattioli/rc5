@@ -1,7 +1,6 @@
 --
 -- Written by Michael Mattioli
 --
---
 -- Description: RC5 encryption module.
 --
 

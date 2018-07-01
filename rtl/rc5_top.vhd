@@ -1,7 +1,6 @@
 --
 -- Written by Michael Mattioli
 --
---
 -- Description: Top-level module of RC5 module.
 --
 
