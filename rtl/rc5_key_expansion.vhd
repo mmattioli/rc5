@@ -28,7 +28,7 @@ architecture behavioral of rc5_key_expansion is
     --      operation is performed.
     type reg is array (0 to 2) of W;
 
-    signal current_state : state;
+    signal current_state : state := idle;
 
     signal array_l : L;
     signal array_s : S;
@@ -91,7 +91,7 @@ begin
                 b(1)(0) & b(1)(31 downto 1) when "11111",
                 b(1) when others;
 
-    state_machine : process (clk)
+    state_machine : process (all)
     begin
         if rising_edge(clk) then
             if rst = '1' then
@@ -102,9 +102,9 @@ begin
                         current_state <= initialize_l;
                     when initialize_l =>
                         if array_l(0) = key(31 downto 0) and
-                            array_l(1) <= key(63 downto 32) and
-                            array_l(2) <= key(95 downto 64) and
-                            array_l(3) <= key(127 downto 96) then
+                            array_l(1) = key(63 downto 32) and
+                            array_l(2) = key(95 downto 64) and
+                            array_l(3) = key(127 downto 96) then
                             current_state <= initialize_s;
                         end if;
                     when initialize_s =>
@@ -124,7 +124,7 @@ begin
         end if;
     end process state_machine;
 
-    l_data : process (clk)
+    l_data : process (all)
     begin
         if rising_edge(clk) then
             case current_state is
@@ -135,16 +135,15 @@ begin
                     array_l(3) <= key(127 downto 96);
                 when mix_key =>
                     array_l(conv_integer(count_j)) <= b(2);
-                when idle =>
+                when others =>
                     for i in 0 to 3 loop
                         array_l(i) <= (others => '0');
                     end loop;
-                when others =>
             end case;
         end if;
     end process l_data;
 
-    s_data : process (clk)
+    s_data : process (all)
     begin
         if rising_edge(clk) then
             case current_state is
@@ -152,15 +151,13 @@ begin
                     array_s <= magic;
                 when mix_key =>
                     array_s(conv_integer(count_i)) <= a(2);
-                when idle =>
-                    array_s <= magic;
                 when others =>
             end case;
         end if;
     end process s_data;
 
     -- i = (i + 1)mod(t) = (i + 1)mod(26)
-    counter_i : process (clk)
+    counter_i : process (all)
     begin
         if rising_edge(clk) then
             case current_state is
@@ -170,15 +167,14 @@ begin
                     else
                         count_i <= count_i + 1;
                     end if;
-                when idle =>
-                    count_i <= (others => '0');
                 when others =>
+                    count_i <= (others => '0');
             end case;
         end if;
     end process counter_i;
 
     -- j = (j + 1)mod(c) = (j + 1)mod(4)
-    counter_j : process (clk)
+    counter_j : process (all)
     begin
         if rising_edge(clk) then
             case current_state is
@@ -188,14 +184,13 @@ begin
                     else
                         count_j <= count_j + 1;
                     end if;
-                when idle =>
-                    count_j <= (others => '0');
                 when others =>
+                    count_j <= (others => '0');
             end case;
         end if;
     end process counter_j;
 
-    counter_mix : process (clk)
+    counter_mix : process (all)
     begin
         if rising_edge(clk) then
             case current_state is
@@ -205,53 +200,50 @@ begin
                     else
                         count_mix <= count_mix + 1;
                     end if;
-                when idle =>
-                    count_mix <= (others => '0');
                 when others =>
+                    count_mix <= (others => '0');
             end case;
         end if;
     end process counter_mix;
 
-    register_a : process (clk)
+    register_a : process (all)
     begin
         if rising_edge(clk) then
             case current_state is
                 when mix_key =>
                     a(0) <= a(2);
-                when idle =>
+                when others =>
                     for i in 0 to 2 loop
                         a(i) <= (others => '0');
                     end loop;
-                when others =>
             end case;
         end if;
     end process register_a;
 
-    register_b : process (clk)
+    register_b : process (all)
     begin
         if rising_edge(clk) then
             case current_state is
                 when mix_key =>
                     b(0) <= b(2);
-                when idle =>
+                when others =>
                     for i in 0 to 2 loop
                         b(i) <= (others => '0');
                     end loop;
-                when others =>
             end case;
         end if;
     end process register_b;
 
-    output : process (clk)
+    output : process (all)
     begin
         if rising_edge(clk) then
             case current_state is
                 when done =>
                     key_array <= array_s;
                 when others =>
-                    for i in 0 to 25 loop
-                        key_array(i) <= (others => '0');
-                    end loop;
+                   for i in 0 to 25 loop
+                      key_array(i) <= (others => '0');
+                   end loop;
             end case;
         end if;
     end process output;
