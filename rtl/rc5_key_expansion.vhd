@@ -213,9 +213,7 @@ begin
                 when mix_key =>
                     a(0) <= a(2);
                 when others =>
-                    for i in 0 to 2 loop
-                        a(i) <= (others => '0');
-                    end loop;
+                    a(0) <= (others => '0');
             end case;
         end if;
     end process register_a;
@@ -227,9 +225,7 @@ begin
                 when mix_key =>
                     b(0) <= b(2);
                 when others =>
-                    for i in 0 to 2 loop
-                        b(i) <= (others => '0');
-                    end loop;
+                    b(0) <= (others => '0');
             end case;
         end if;
     end process register_b;
