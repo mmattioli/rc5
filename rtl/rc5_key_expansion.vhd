@@ -116,9 +116,7 @@ begin
                             current_state <= done;
                         end if;
                     when done =>
-                        if key = x"00000000" then -- Key has been zeroed, start over.
-                            current_state <= idle;
-                        end if;
+                        -- Do nothing.
                 end case;
             end if;
         end if;
@@ -136,9 +134,6 @@ begin
                 when mix_key =>
                     array_l(conv_integer(count_j)) <= b(2);
                 when others =>
-                    for i in 0 to 3 loop
-                        array_l(i) <= (others => '0');
-                    end loop;
             end case;
         end if;
     end process l_data;
