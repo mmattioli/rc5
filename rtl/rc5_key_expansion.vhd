@@ -7,7 +7,7 @@
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
-use work.rc5.ALL;
+use work.rc5.all;
 
 entity rc5_key_expansion is
     port (  clk         : in std_logic;
@@ -22,7 +22,7 @@ architecture behavioral of rc5_key_expansion is
 
     -- Intermediate signals are required to perform the operations; instead of declaring separate
     -- signals, define an array and use the indices as such:
-    --      '0' will considered the actual value of the register once the operation is fully
+    --      '0' will be considered the actual value of the register once the operation is fully
     --      completed.
     --      '1' and '2' will be considered intermediate values used to hold data while the
     --      operation is performed.
@@ -134,6 +134,9 @@ begin
                 when mix_key =>
                     array_l(conv_integer(count_j)) <= b(2);
                 when others =>
+                    for i in 0 to 3 loop
+                        array_l(i) <= (others => '0');
+                    end loop;
             end case;
         end if;
     end process l_data;
@@ -174,7 +177,7 @@ begin
         if rising_edge(clk) then
             case current_state is
                 when mix_key =>
-                    if count_j = "11" then  -- Reached 3.
+                    if count_j = "11" then  -- Reached 4.
                         count_j <= (others => '0');
                     else
                         count_j <= count_j + 1;
@@ -190,9 +193,7 @@ begin
         if rising_edge(clk) then
             case current_state is
                 when mix_key =>
-                    if count_mix = "1001101" then -- Reached 78.
-                        count_mix <= (others => '0');
-                    else
+                    if count_mix /= "1001101" then -- Reached 78.
                         count_mix <= count_mix + 1;
                     end if;
                 when others =>

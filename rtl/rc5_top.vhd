@@ -7,7 +7,7 @@
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
-use work.rc5.ALL;
+use work.rc5.all;
 
 entity rc5_top is
     port (  clk         : in std_logic;
@@ -49,10 +49,10 @@ architecture behavioral of rc5_top is
 
 begin
 
-    key: rc5_key_expansion port map (   clk => clk,
-                                        rst => rst,
-                                        key => key,
-                                        key_array => array_s);
+    key_expand: rc5_key_expansion port map (clk => clk,
+                                            rst => rst,
+                                            key => key,
+                                            key_array => array_s);
 
     encrypt: rc5_encrypt port map ( clk => clk,
                                     rst => rst,

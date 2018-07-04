@@ -7,7 +7,7 @@
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
-use work.rc5.ALL;
+use work.rc5.all;
 
 entity rc5_decrypt is
     port (  clk         : in std_logic;

@@ -7,7 +7,7 @@
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
-use work.rc5.ALL;
+use work.rc5.all;
 
 entity rc5_encrypt is
     port (  clk         : in std_logic;
@@ -148,9 +148,7 @@ begin
         if rising_edge(clk) then
             case current_state is
                 when round =>
-                    if count_r = R then
-                        count_r <= "0001";
-                    else
+                    if count_r /= R then
                         count_r <= count_r + 1;
                     end if;
                 when others =>
