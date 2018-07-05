@@ -33,7 +33,7 @@ architecture behavioral of rc5_encrypt is
 
     signal current_state : state := idle;
 
-    signal count_r : std_logic_vector(3 downto 0);
+    signal count_r : integer;
 
     signal a : reg;
     signal b : reg;
@@ -78,12 +78,12 @@ begin
                 a(4) when others;
 
     a(2) <= plaintext(63 downto 32) + key_array(0); -- A = A + S[0]
-    a(0) <= a(3) + key_array(conv_integer(count_r & '0')); -- S[2 * i]
+    a(0) <= a(3) + key_array(2 * count_r); -- S[2 * i]
 
     -- B = ((B XOR A) <<< 3) S[2 * i + 1]
     b(4) <= b(1) XOR a(0); -- B XOR A
 
-    with a(0)(4 downto 0) select
+    with a(0)(4 downto 0) select -- (B XOR A) <<< 3
         b(3) <= b(4)(30 downto 0) & b(4)(31) when "00001",
                 b(4)(29 downto 0) & b(4)(31 downto 30) when "00010",
                 b(4)(28 downto 0) & b(4)(31 downto 29) when "00011",
@@ -118,7 +118,7 @@ begin
                 b(4) when others;
 
     b(2) <= plaintext(31 downto 0) + key_array(1); -- B = B + S[1]
-    b(0) <= b(3) + key_array(conv_integer(count_r & '1')); -- S[2 * i + 1]
+    b(0) <= b(3) + key_array((2 * count_r) + 1); -- S[2 * i + 1]
 
     state_machine : process (all)
     begin
@@ -128,9 +128,11 @@ begin
             else
                 case current_state is
                     when idle =>
-                        if key_array /= (others => '0') then
-                            current_state <= half_round;
-                        end if;
+                        for i in 0 to key_array'length-1 loop
+                            if key_array(i) /= x"00000000" then
+                                current_state <= half_round;
+                            end if;
+                        end loop;
                     when half_round =>
                         current_state <= round;
                     when round =>
@@ -148,11 +150,9 @@ begin
         if rising_edge(clk) then
             case current_state is
                 when round =>
-                    if count_r /= R then
-                        count_r <= count_r + 1;
-                    end if;
+                    count_r <= count_r + 1;
                 when others =>
-                    count_r <= "0001";
+                    count_r <= 1;
             end case;
         end if;
     end process counter_r;
@@ -165,8 +165,9 @@ begin
                     a(1) <= a(2);
                 when round =>
                     a(1) <= a(0);
-                when others =>
+                when idle =>
                     a(1) <= (others => '0');
+                when others =>
             end case;
         end if;
     end process register_a;
@@ -179,8 +180,9 @@ begin
                     b(1) <= b(2);
                 when round =>
                     b(1) <= b(0);
-                when others =>
+                when idle =>
                     b(1) <= (others => '0');
+                when others =>
             end case;
         end if;
     end process register_b;
