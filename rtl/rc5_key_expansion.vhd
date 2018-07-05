@@ -33,9 +33,9 @@ architecture behavioral of rc5_key_expansion is
     signal array_l : L;
     signal array_s : S;
 
-    signal count_i : std_logic_vector(4 downto 0);
-    signal count_j : std_logic_vector(1 downto 0);
-    signal count_mix : std_logic_vector(6 downto 0);
+    signal count_i : integer;
+    signal count_j : integer;
+    signal count_mix : integer;
 
     constant magic : S := ( x"b7e15163", x"5618cb1c", x"f45044d5", x"9287be8e", x"30bf3847",
                             x"cef6b200", x"6d2e2bb9", x"0b65a572", x"a99d1f2b", x"47d498e4",
@@ -51,12 +51,12 @@ architecture behavioral of rc5_key_expansion is
 begin
 
     -- A = S[i] = (S[i] + A + B) <<< 3
-    a(1) <= array_s(conv_integer(count_i)) + a(0) + b(0); -- S[i] + A + B
+    a(1) <= array_s(count_i) + a(0) + b(0); -- S[i] + A + B
     a(2) <= a(1)(28 downto 0) & a(1)(31 downto 29); -- <<< 3
 
     -- B = L[j] = (L[j] + A + B) <<< (A + B)
     ab <= a(2) + b(0); -- A + B
-    b(1) <= array_l(conv_integer(count_j)) + ab; -- L[j] + A + B
+    b(1) <= array_l(count_j) + ab; -- L[j] + A + B
     with ab(4 downto 0) select -- <<< (A + B)
         b(2) <= b(1)(30 downto 0) & b(1)(31) when "00001",
                 b(1)(29 downto 0) & b(1)(31 downto 30) when "00010",
@@ -112,7 +112,7 @@ begin
                             current_state <= mix_key;
                         end if;
                     when mix_key =>
-                        if count_mix = "1001101" then -- Reached 78 which is 3 * max(t, c) = 3 * 26.
+                        if count_mix = 78 then -- Reached 78 which is 3 * max(t, c) = 3 * 26.
                             current_state <= done;
                         end if;
                     when done =>
@@ -132,9 +132,9 @@ begin
                     array_l(2) <= key(95 downto 64);
                     array_l(3) <= key(127 downto 96);
                 when mix_key =>
-                    array_l(conv_integer(count_j)) <= b(2);
+                    array_l(count_j) <= b(2);
                 when others =>
-                    for i in 0 to 3 loop
+                    for i in 0 to array_l'length-1 loop
                         array_l(i) <= (others => '0');
                     end loop;
             end case;
@@ -148,7 +148,7 @@ begin
                 when initialize_s =>
                     array_s <= magic;
                 when mix_key =>
-                    array_s(conv_integer(count_i)) <= a(2);
+                    array_s(count_i) <= a(2);
                 when others =>
             end case;
         end if;
@@ -160,13 +160,13 @@ begin
         if rising_edge(clk) then
             case current_state is
                 when mix_key =>
-                    if count_i = "11001" then -- Reached 26.
-                        count_i <= (others => '0');
+                    if count_i = 25 then -- Reached 26.
+                        count_i <= 0;
                     else
                         count_i <= count_i + 1;
                     end if;
                 when others =>
-                    count_i <= (others => '0');
+                    count_i <= 0;
             end case;
         end if;
     end process counter_i;
@@ -177,13 +177,13 @@ begin
         if rising_edge(clk) then
             case current_state is
                 when mix_key =>
-                    if count_j = "11" then  -- Reached 4.
-                        count_j <= (others => '0');
+                    if count_j = 3 then  -- Reached 4.
+                        count_j <= 0;
                     else
                         count_j <= count_j + 1;
                     end if;
                 when others =>
-                    count_j <= (others => '0');
+                    count_j <= 0;
             end case;
         end if;
     end process counter_j;
@@ -193,11 +193,11 @@ begin
         if rising_edge(clk) then
             case current_state is
                 when mix_key =>
-                    if count_mix /= "1001101" then -- Reached 78.
+                    if count_mix /= 78 then -- Reached 78.
                         count_mix <= count_mix + 1;
                     end if;
                 when others =>
-                    count_mix <= (others => '0');
+                    count_mix <= 1;
             end case;
         end if;
     end process counter_mix;
@@ -233,7 +233,7 @@ begin
                 when done =>
                     key_array <= array_s;
                 when others =>
-                   for i in 0 to 25 loop
+                   for i in 0 to key_array'length-1 loop
                       key_array(i) <= (others => '0');
                    end loop;
             end case;
