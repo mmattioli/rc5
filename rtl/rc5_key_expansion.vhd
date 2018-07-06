@@ -33,8 +33,8 @@ architecture behavioral of rc5_key_expansion is
     signal array_l : L;
     signal array_s : S;
 
-    signal count_i : integer;
-    signal count_j : integer;
+    signal count_i : integer := 0;
+    signal count_j : integer := 0;
     signal count_mix : integer;
 
     constant magic : S := ( x"b7e15163", x"5618cb1c", x"f45044d5", x"9287be8e", x"30bf3847",
@@ -101,18 +101,21 @@ begin
                     when idle =>
                         current_state <= initialize_l;
                     when initialize_l =>
-                        if array_l(0) = key(31 downto 0) and
-                            array_l(1) = key(63 downto 32) and
-                            array_l(2) = key(95 downto 64) and
-                            array_l(3) = key(127 downto 96) then
-                            current_state <= initialize_s;
-                        end if;
+                        for i in 0 to array_l'length-1 loop
+                            if array_l(i) = key((W'length * (i + 1))-1 downto W'length * i) then
+                                if i = array_l'length-1 then -- Last element in the array?
+                                    current_state <= initialize_s;
+                                else
+                                    next; -- Keep checking.
+                                end if;
+                            end if;
+                        end loop;
                     when initialize_s =>
                         if array_s = magic then
                             current_state <= mix_key;
                         end if;
                     when mix_key =>
-                        if count_mix = 78 then -- Reached 78 which is 3 * max(t, c) = 3 * 26.
+                        if count_mix = (3 * T) then -- Reached 78 which is 3 * max(t, c) = 3 * 26.
                             current_state <= done;
                         end if;
                     when done =>
@@ -127,10 +130,9 @@ begin
         if rising_edge(clk) then
             case current_state is
                 when initialize_l =>
-                    array_l(0) <= key(31 downto 0);
-                    array_l(1) <= key(63 downto 32);
-                    array_l(2) <= key(95 downto 64);
-                    array_l(3) <= key(127 downto 96);
+                    for i in 0 to array_l'length-1 loop
+                        array_l(i) <= key((W'length * (i + 1))-1 downto W'length * i);
+                    end loop;
                 when mix_key =>
                     array_l(count_j) <= b(2);
                 when others =>
@@ -160,7 +162,7 @@ begin
         if rising_edge(clk) then
             case current_state is
                 when mix_key =>
-                    if count_i = 25 then -- Reached 26.
+                    if count_i = (T - 1) then -- Reached 26.
                         count_i <= 0;
                     else
                         count_i <= count_i + 1;
@@ -177,7 +179,7 @@ begin
         if rising_edge(clk) then
             case current_state is
                 when mix_key =>
-                    if count_j = 3 then  -- Reached 4.
+                    if count_j = (C - 1) then  -- Reached 4.
                         count_j <= 0;
                     else
                         count_j <= count_j + 1;
@@ -193,7 +195,7 @@ begin
         if rising_edge(clk) then
             case current_state is
                 when mix_key =>
-                    if count_mix /= 78 then -- Reached 78.
+                    if count_mix /= (3 * T) then -- Reached 78.
                         count_mix <= count_mix + 1;
                     end if;
                 when others =>
