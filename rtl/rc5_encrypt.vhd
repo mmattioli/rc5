@@ -12,9 +12,9 @@ use work.rc5.all;
 entity rc5_encrypt is
     port (  clk         : in std_logic;
             rst         : in std_logic;
-            plaintext   : in std_logic_vector(63 downto 0);
+            plaintext   : in std_logic_vector((W'length * 2)-1 downto 0);
             key_array   : in S; -- Key array, S.
-            ciphertext  : out std_logic_vector(63 downto 0));
+            ciphertext  : out std_logic_vector((W'length * 2)-1 downto 0));
 end rc5_encrypt;
 
 architecture behavioral of rc5_encrypt is
@@ -77,7 +77,7 @@ begin
                 a(4)(0) & a(4)(31 downto 1) when "11111",
                 a(4) when others;
 
-    a(2) <= plaintext(63 downto 32) + key_array(0); -- A = A + S[0]
+    a(2) <= plaintext((W'length * 2)-1 downto W'length) + key_array(0); -- A = A + S[0]
     a(0) <= a(3) + key_array(2 * count_r); -- S[2 * i]
 
     -- B = ((B XOR A) <<< 3) S[2 * i + 1]
@@ -117,7 +117,7 @@ begin
                 b(4)(0) & b(4)(31 downto 1) when "11111",
                 b(4) when others;
 
-    b(2) <= plaintext(31 downto 0) + key_array(1); -- B = B + S[1]
+    b(2) <= plaintext(W'length-1 downto 0) + key_array(1); -- B = B + S[1]
     b(0) <= b(3) + key_array((2 * count_r) + 1); -- S[2 * i + 1]
 
     state_machine : process (all)
@@ -140,6 +140,15 @@ begin
                             current_state <= done;
                         end if;
                     when done =>
+                        for i in 0 to key_array'length-1 loop
+                            if key_array(i) = x"00000000" then
+                               if i = key_array'length-1 then -- Last element in the array?
+                                   current_state <= idle;
+                               else
+                                   next; -- Keep checking.
+                               end if;
+                            end if;
+                        end loop;
                 end case;
             end if;
         end if;
@@ -150,7 +159,9 @@ begin
         if rising_edge(clk) then
             case current_state is
                 when round =>
-                    count_r <= count_r + 1;
+                    if count_r /= R then
+                        count_r <= count_r + 1;
+                    end if;
                 when others =>
                     count_r <= 1;
             end case;
