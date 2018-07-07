@@ -33,9 +33,9 @@ architecture behavioral of rc5_key_expansion is
     signal array_l : L;
     signal array_s : S;
 
-    signal count_i : integer := 0;
-    signal count_j : integer := 0;
-    signal count_mix : integer;
+    signal count_i : integer range 0 to T-1;
+    signal count_j : integer range 0 to C-1;
+    signal count_mix : integer range 1 to (3 * T);
 
     constant magic : S := ( x"b7e15163", x"5618cb1c", x"f45044d5", x"9287be8e", x"30bf3847",
                             x"cef6b200", x"6d2e2bb9", x"0b65a572", x"a99d1f2b", x"47d498e4",

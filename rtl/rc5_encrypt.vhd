@@ -33,7 +33,7 @@ architecture behavioral of rc5_encrypt is
 
     signal current_state : state := idle;
 
-    signal count_r : integer;
+    signal count_r : integer range 1 to R;
 
     signal a : reg;
     signal b : reg;
