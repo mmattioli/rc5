@@ -1,7 +1,7 @@
 --
 -- Written by Michael Mattioli
 --
--- Description: Top-level module of RC5 module.
+-- Description: RC5 top-level design.
 --
 
 library ieee;
@@ -14,8 +14,8 @@ entity rc5_top is
             rst         : in std_logic;
             sel         : in std_logic; -- High = encrypt, low = decrypt.
             key         : in K; -- Secret key, K.
-            data_in     : in std_logic_vector(63 downto 0);
-            data_out    : out std_logic_vector(63 downto 0));
+            data_in     : in std_logic_vector((W'length * 2)-1 downto 0);
+            data_out    : out std_logic_vector((W'length * 2)-1 downto 0));
 end rc5_top;
 
 architecture behavioral of rc5_top is
@@ -30,22 +30,22 @@ architecture behavioral of rc5_top is
     component rc5_encrypt is
         port (  clk         : in std_logic;
                 rst         : in std_logic;
-                plaintext   : in std_logic_vector(63 downto 0);
+                plaintext   : in std_logic_vector((W'length * 2)-1 downto 0);
                 key_array   : in S; -- Key array, S.
-                ciphertext  : out std_logic_vector(63 downto 0));
+                ciphertext  : out std_logic_vector((W'length * 2)-1 downto 0));
     end component;
 
     component rc5_decrypt is
         port (  clk         : in std_logic;
                 rst         : in std_logic;
-                ciphertext  : in std_logic_vector(63 downto 0);
+                ciphertext  : in std_logic_vector((W'length * 2)-1 downto 0);
                 key_array   : in S; -- Key array, S.
-                plaintext   : out std_logic_vector(63 downto 0));
+                plaintext   : out std_logic_vector((W'length * 2)-1 downto 0));
     end component;
 
     signal array_s : S;
-    signal enc_out : std_logic_vector(63 downto 0);
-    signal dec_out : std_logic_vector(63 downto 0);
+    signal enc_out : std_logic_vector((W'length * 2)-1 downto 0);
+    signal dec_out : std_logic_vector((W'length * 2)-1 downto 0);
 
 begin
 

@@ -1,12 +1,13 @@
 --
 -- Written by Michael Mattioli
 --
--- Description: Key expansion module.
+-- Description: RC5 key expansion module.
 --
 
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
+use ieee.numeric_std.all;
 use work.rc5.all;
 
 entity rc5_key_expansion is
@@ -18,15 +19,7 @@ end rc5_key_expansion;
 
 architecture behavioral of rc5_key_expansion is
 
-    type state is (idle, initialize_l, initialize_s, mix_key, done);
-
-    -- Intermediate signals are required to perform the operations; instead of declaring separate
-    -- signals, define an array and use the indices as such:
-    --      '0' will be considered the actual value of the register once the operation is fully
-    --      completed.
-    --      '1' and '2' will be considered intermediate values used to hold data while the
-    --      operation is performed.
-    type reg is array (0 to 2) of W;
+    type state is (idle, initialize, mix_key, done);
 
     signal current_state : state := idle;
 
@@ -44,54 +37,12 @@ architecture behavioral of rc5_key_expansion is
                             x"1436d3d7", x"b26e4d90", x"50a5c749", x"eedd4102", x"8d14babb",
                             x"2b4c3474");
 
-    signal a : reg;
-    signal b : reg;
-    signal ab : W; -- Used to hold the value of A + B.
+    signal a : W;
+    signal b : W;
 
 begin
 
-    -- A = S[i] = (S[i] + A + B) <<< 3
-    a(1) <= array_s(count_i) + a(0) + b(0); -- S[i] + A + B
-    a(2) <= a(1)(28 downto 0) & a(1)(31 downto 29); -- <<< 3
-
-    -- B = L[j] = (L[j] + A + B) <<< (A + B)
-    ab <= a(2) + b(0); -- A + B
-    b(1) <= array_l(count_j) + ab; -- L[j] + A + B
-    with ab(4 downto 0) select -- <<< (A + B)
-        b(2) <= b(1)(30 downto 0) & b(1)(31) when "00001",
-                b(1)(29 downto 0) & b(1)(31 downto 30) when "00010",
-                b(1)(28 downto 0) & b(1)(31 downto 29) when "00011",
-                b(1)(27 downto 0) & b(1)(31 downto 28) when "00100",
-                b(1)(26 downto 0) & b(1)(31 downto 27) when "00101",
-                b(1)(25 downto 0) & b(1)(31 downto 26) when "00110",
-                b(1)(24 downto 0) & b(1)(31 downto 25) when "00111",
-                b(1)(23 downto 0) & b(1)(31 downto 24) when "01000",
-                b(1)(22 downto 0) & b(1)(31 downto 23) when "01001",
-                b(1)(21 downto 0) & b(1)(31 downto 22) when "01010",
-                b(1)(20 downto 0) & b(1)(31 downto 21) when "01011",
-                b(1)(19 downto 0) & b(1)(31 downto 20) when "01100",
-                b(1)(18 downto 0) & b(1)(31 downto 19) when "01101",
-                b(1)(17 downto 0) & b(1)(31 downto 18) when "01110",
-                b(1)(16 downto 0) & b(1)(31 downto 17) when "01111",
-                b(1)(15 downto 0) & b(1)(31 downto 16) when "10000",
-                b(1)(14 downto 0) & b(1)(31 downto 15) when "10001",
-                b(1)(13 downto 0) & b(1)(31 downto 14) when "10010",
-                b(1)(12 downto 0) & b(1)(31 downto 13) when "10011",
-                b(1)(11 downto 0) & b(1)(31 downto 12) when "10100",
-                b(1)(10 downto 0) & b(1)(31 downto 11) when "10101",
-                b(1)(9 downto 0) & b(1)(31 downto 10) when "10110",
-                b(1)(8 downto 0) & b(1)(31 downto 9) when "10111",
-                b(1)(7 downto 0) & b(1)(31 downto 8) when "11000",
-                b(1)(6 downto 0) & b(1)(31 downto 7) when "11001",
-                b(1)(5 downto 0) & b(1)(31 downto 6) when "11010",
-                b(1)(4 downto 0) & b(1)(31 downto 5) when "11011",
-                b(1)(3 downto 0) & b(1)(31 downto 4) when "11100",
-                b(1)(2 downto 0) & b(1)(31 downto 3) when "11101",
-                b(1)(1 downto 0) & b(1)(31 downto 2) when "11110",
-                b(1)(0) & b(1)(31 downto 1) when "11111",
-                b(1) when others;
-
-    state_machine : process (all)
+    state_machine : process (clk, rst)
     begin
         if rising_edge(clk) then
             if rst = '1' then
@@ -99,70 +50,71 @@ begin
             else
                 case current_state is
                     when idle =>
-                        current_state <= initialize_l;
-                    when initialize_l =>
-                        for i in 0 to array_l'length-1 loop
-                            if array_l(i) = key((W'length * (i + 1))-1 downto W'length * i) then
-                                if i = array_l'length-1 then -- Last element in the array?
-                                    current_state <= initialize_s;
-                                else
-                                    next; -- Keep checking.
-                                end if;
-                            end if;
-                        end loop;
-                    when initialize_s =>
-                        if array_s = magic then
-                            current_state <= mix_key;
-                        end if;
+                        current_state <= initialize;
+                    when initialize =>
+                        current_state <= mix_key;
                     when mix_key =>
                         if count_mix = (3 * T) then -- Reached 78 which is 3 * max(t, c) = 3 * 26.
                             current_state <= done;
                         end if;
                     when done =>
-                        -- Do nothing.
                 end case;
             end if;
         end if;
     end process state_machine;
 
-    l_data : process (all)
+    data : process (clk)
+        variable temp_a : W;
+        variable temp_b : W;
+        variable temp_ab : W;
     begin
         if rising_edge(clk) then
             case current_state is
-                when initialize_l =>
-                    for i in 0 to array_l'length-1 loop
-                        array_l(i) <= key((W'length * (i + 1))-1 downto W'length * i);
-                    end loop;
-                when mix_key =>
-                    array_l(count_j) <= b(2);
-                when others =>
+                when idle =>
                     for i in 0 to array_l'length-1 loop
                         array_l(i) <= (others => '0');
                     end loop;
-            end case;
-        end if;
-    end process l_data;
+                when initialize =>
 
-    s_data : process (all)
-    begin
-        if rising_edge(clk) then
-            case current_state is
-                when initialize_s =>
+                    -- Fill array L with secret key K.
+                    for i in 0 to array_l'length-1 loop
+                        array_l(i) <= key((W'length * (i + 1))-1 downto W'length * i);
+                    end loop;
+
+                    -- Fill array S with magic constants.
                     array_s <= magic;
+
+                    -- Zero A and B.
+                    a <= (others => '0');
+                    b <= (others => '0');
+
                 when mix_key =>
-                    array_s(count_i) <= a(2);
+
+                    -- A = S[i] = (S[i] + A + B) <<< 3
+                    temp_a := array_s(count_i) + a + b; -- S[i] + A + B
+                    temp_a := to_stdlogicvector(to_bitvector(temp_a) rol 3); -- <<< 3
+                    a <= temp_a; -- Update A
+                    array_s(count_i) <= temp_a; -- Update S[i]
+
+                    -- B = L[j] = (L[j] + A + B) <<< (A + B)
+                    temp_b := array_l(count_j) + temp_a + b; -- (L[j] + A + B)
+                    temp_ab := temp_a + b;
+                    temp_b := to_stdlogicvector(to_bitvector(temp_b) rol to_integer(unsigned(temp_ab(4 downto 0)))); -- <<< (A + B)
+                    b <= temp_b; -- Update B
+                    array_l(count_j) <= temp_b; -- Update L[j]
+
                 when others =>
             end case;
         end if;
-    end process s_data;
+    end process data;
 
     -- i = (i + 1)mod(t) = (i + 1)mod(26)
-    counter_i : process (all)
+    counter_i : process (clk)
     begin
         if rising_edge(clk) then
             case current_state is
                 when mix_key =>
-                    if count_i = (T - 1) then -- Reached 26.
+                    if count_i = (T - 1) then
                         count_i <= 0;
                     else
                         count_i <= count_i + 1;
@@ -174,12 +126,12 @@ begin
     end process counter_i;
 
     -- j = (j + 1)mod(c) = (j + 1)mod(4)
-    counter_j : process (all)
+    counter_j : process (clk)
     begin
         if rising_edge(clk) then
             case current_state is
                 when mix_key =>
-                    if count_j = (C - 1) then  -- Reached 4.
+                    if count_j = (C - 1) then
                         count_j <= 0;
                     else
                         count_j <= count_j + 1;
@@ -190,45 +142,19 @@ begin
         end if;
     end process counter_j;
 
-    counter_mix : process (all)
+    counter_mix : process (clk)
     begin
         if rising_edge(clk) then
             case current_state is
                 when mix_key =>
-                    if count_mix /= (3 * T) then -- Reached 78.
-                        count_mix <= count_mix + 1;
-                    end if;
+                    count_mix <= count_mix + 1;
                 when others =>
                     count_mix <= 1;
             end case;
         end if;
     end process counter_mix;
 
-    register_a : process (all)
-    begin
-        if rising_edge(clk) then
-            case current_state is
-                when mix_key =>
-                    a(0) <= a(2);
-                when others =>
-                    a(0) <= (others => '0');
-            end case;
-        end if;
-    end process register_a;
-
-    register_b : process (all)
-    begin
-        if rising_edge(clk) then
-            case current_state is
-                when mix_key =>
-                    b(0) <= b(2);
-                when others =>
-                    b(0) <= (others => '0');
-            end case;
-        end if;
-    end process register_b;
-
-    output : process (all)
+    output : process (clk)
     begin
         if rising_edge(clk) then
             case current_state is

@@ -1,7 +1,7 @@
 --
 -- Written by Michael Mattioli
 --
--- Description: Key expansion module.
+-- Description: RC5 package.
 --
 
 library ieee;
@@ -15,7 +15,7 @@ package rc5 is
     constant R : integer := 12; -- 12 rounds.
     constant T : integer := 2 * (R + 1); -- Size of array S.
     constant C : integer := (K'length / 8) / (W'length / 8); -- Size of array L.
-    type S is array (0 to T-1) of W; -- Table of 26 words.
-    type L is array (0 to C-1) of W; -- Table of 4 words.
+    type S is array (0 to T-1) of W; -- Table of 26 words; 2(rounds + 1).
+    type L is array (0 to C-1) of W; -- Table of 4 words; (secret key bytes / (word / 8)).
 
 end rc5;

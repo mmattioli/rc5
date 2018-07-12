@@ -33,12 +33,13 @@ architecture behavioral of rc5_key_encrypt_tb is
                                 x"00000000", x"00000000", x"00000000", x"00000000", x"00000000",
                                 x"00000000");
 
-    constant s_expanded : S := (x"9bbbd8c8", x"1a37f7fb", x"46F8E8C5", x"460C6085", x"70F83B8A",
-                                x"284B8303", x"513E1454", x"F621ED22", x"3125065D", x"11A83A5D",
-                                x"D427686B", x"713AD82D", x"4B792F99", x"2799A4DD", x"A7901C49",
-                                x"DEDE871A", x"36C03196", x"A7EFC249", x"61A78BB8", x"3B0A1D2B",
-                                x"4DBFCA76", x"AE162167", x"30D76B0A", x"43192304", x"F6CC1431",
-                                x"65046380");
+    -- Expanded key table for key 0x12082249120822491208224912082249.
+    constant s_expanded : S := (x"78600507", x"757d940c", x"51feb1c4", x"80d57578", x"086d8132",
+                                x"09f462b7", x"72ec15e4", x"1ddb087d", x"54e8c8e3", x"d83fae59",
+                                x"76f69b72", x"a4541443", x"576f3690", x"7cae8ea1", x"9824499f",
+                                x"080590cc", x"43a3e585", x"f6e79c2e", x"6e489e6d", x"cb4dbaee",
+                                x"aacf4627", x"8d8153e9", x"114044fd", x"90388748", x"05cde530",
+                                x"bfc64c58");
 
     signal clk : std_logic := '0';
     signal rst : std_logic := '0';
@@ -66,46 +67,118 @@ begin
     stimuli : process
     begin
 
+        rst <= '1';
         key_array <= s_empty;
         wait for clk_period;
-
-        plaintext <= x"8EC74320A138BCE0";
-        key_array <= s_expanded;
-        wait for clk_period * 50;
-        assert (ciphertext = x"9B121890938518FF");
-
-        key_array <= s_empty;
+        rst <= '0';
         wait for clk_period;
 
-        plaintext <= x"9015DA409FEA25C0";
+        plaintext <= x"1208224912082249";
         key_array <= s_expanded;
-        wait for clk_period * 50;
-        assert (ciphertext = x"5C93F105E8DA3337");
+        wait for clk_period * (R + 3);
+        assert (ciphertext = x"9112E77164848CEC");
 
+        rst <= '1';
         key_array <= s_empty;
         wait for clk_period;
-
-        plaintext <= x"90BD25D09F42DA30";
-        key_array <= s_expanded;
-        wait for clk_period * 50;
-        assert (ciphertext = x"93429D58963CDCDD");
-
-        key_array <= s_empty;
+        rst <= '0';
         wait for clk_period;
 
-        plaintext <= x"916471609E9B8EA0";
+        plaintext <= x"9112E77164848CEC";
         key_array <= s_expanded;
-        wait for clk_period * 50;
-        assert (ciphertext = x"4E05B93F6EABA955");
+        wait for clk_period * (R + 3);
+        assert (ciphertext = x"9C7A45D860BE4B9D");
 
+        rst <= '1';
         key_array <= s_empty;
         wait for clk_period;
+        rst <= '0';
+        wait for clk_period;
 
-        plaintext <= x"920BBCF09DF44310";
+        plaintext <= x"9C7A45D860BE4B9D";
         key_array <= s_expanded;
-        wait for clk_period * 50;
-        assert (ciphertext = x"802F51F583FA6B9D");
-        
+        wait for clk_period * (R + 3);
+        assert (ciphertext = x"AEE9B73C9871E7F6");
+
+        rst <= '1';
+        key_array <= s_empty;
+        wait for clk_period;
+        rst <= '0';
+        wait for clk_period;
+
+        plaintext <= x"AEE9B73C9871E7F6";
+        key_array <= s_expanded;
+        wait for clk_period * (R + 3);
+        assert (ciphertext = x"7AF099359361975E");
+
+        rst <= '1';
+        key_array <= s_empty;
+        wait for clk_period;
+        rst <= '0';
+        wait for clk_period;
+
+        plaintext <= x"7AF099359361975E";
+        key_array <= s_expanded;
+        wait for clk_period * (R + 3);
+        assert(ciphertext = x"1949A20065B0003D");
+
+        rst <= '1';
+        key_array <= s_empty;
+        wait for clk_period;
+        rst <= '0';
+        wait for clk_period;
+
+        plaintext <= x"1949A20065B0003D";
+        key_array <= s_expanded;
+        wait for clk_period * (R + 3);
+        assert (ciphertext = x"43B8F430ADB3C292");
+
+        rst <= '1';
+        key_array <= s_empty;
+        wait for clk_period;
+        rst <= '0';
+        wait for clk_period;
+
+        plaintext <= x"43B8F430ADB3C292";
+        key_array <= s_expanded;
+        wait for clk_period * (R + 3);
+        assert (ciphertext = x"52B2097EE281088C");
+
+        rst <= '1';
+        key_array <= s_empty;
+        wait for clk_period;
+        rst <= '0';
+        wait for clk_period;
+
+        plaintext <= x"52B2097EE281088C";
+        key_array <= s_expanded;
+        wait for clk_period * (R + 3);
+        assert (ciphertext = x"EB9B8A50B1778384");
+
+        rst <= '1';
+        key_array <= s_empty;
+        wait for clk_period;
+        rst <= '0';
+        wait for clk_period;
+
+        plaintext <= x"EB9B8A50B1778384";
+        key_array <= s_expanded;
+        wait for clk_period * (R + 3);
+        assert (ciphertext = x"FD8FCE1C50A93116");
+
+        rst <= '1';
+        key_array <= s_empty;
+        wait for clk_period;
+        rst <= '0';
+        wait for clk_period;
+
+        plaintext <= x"FD8FCE1C50A93116";
+        key_array <= s_expanded;
+        wait for clk_period * (R + 3);
+        assert (ciphertext = x"07AF72B83C99D33D");
+
+        finish(0);
+
     end process stimuli;
 
 end behavioral;
